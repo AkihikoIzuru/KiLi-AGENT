@@ -1,14 +1,11 @@
 'use client';
 
-import { Box, Paper, Typography, IconButton, Tooltip, Stack, Chip } from '@mui/material';
+import { Box, IconButton, Tooltip, Stack, Chip } from '@mui/material';
 import PersonIcon from '@mui/icons-material/PersonRounded';
 import SmartToyIcon from '@mui/icons-material/SmartToyRounded';
 import ContentCopyIcon from '@mui/icons-material/ContentCopyRounded';
-import ThumbUpIcon from '@mui/icons-material/ThumbUpRounded';
-import ThumbDownIcon from '@mui/icons-material/ThumbDownRounded';
-import RefreshIcon from '@mui/icons-material/RefreshRounded';
-import EditIcon from '@mui/icons-material/EditRounded';
 import CheckIcon from '@mui/icons-material/CheckRounded';
+import CodeIcon from '@mui/icons-material/CodeRounded';
 import { type Message as DBMessage } from '@/lib/db/dexie';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -16,7 +13,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeSanitize from 'rehype-sanitize';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { parseArtifacts, extractThinking } from '@/lib/artifact/parser';
 import ThinkingBlock from './ThinkingBlock';
 import 'katex/dist/katex.min.css';
@@ -29,7 +26,7 @@ interface MessageProps {
   onEdit?: (newContent: string) => void;
 }
 
-export default function Message({ message, isStreaming = false, onRegenerate, onEdit }: MessageProps) {
+export default function Message({ message, isStreaming = false }: MessageProps) {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
 
@@ -55,80 +52,133 @@ export default function Message({ message, isStreaming = false, onRegenerate, on
       sx={{
         display: 'flex',
         gap: 2,
-        mb: 3,
-        flexDirection: isUser ? 'row-reverse' : 'row',
+        mb: 4,
+        alignItems: 'flex-start',
       }}
     >
       {/* Avatar */}
       <Box
         sx={{
-          width: 40,
-          height: 40,
-          borderRadius: '50%',
-          bgcolor: isUser ? 'primary.main' : 'secondary.main',
+          width: 32,
+          height: 32,
+          borderRadius: 1,
+          bgcolor: isUser ? 'primary.main' : 'background.paper',
+          border: isUser ? 'none' : 1,
+          borderColor: 'divider',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
-          color: 'white',
+          color: isUser ? 'white' : 'text.secondary',
         }}
       >
-        {isUser ? <PersonIcon /> : <SmartToyIcon />}
+        {isUser ? <PersonIcon sx={{ fontSize: 18 }} /> : <SmartToyIcon sx={{ fontSize: 18 }} />}
       </Box>
 
       {/* Content */}
-      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+      <Box sx={{ flexGrow: 1, minWidth: 0, maxWidth: 'calc(100% - 48px)' }}>
         {/* Thinking block */}
         {!isUser && thinking && <ThinkingBlock thinking={thinking} />}
 
-        <Paper
-          elevation={0}
-          sx={{
-            p: 2,
-            bgcolor: isUser ? 'primary.main' : 'background.paper',
-            color: isUser ? 'primary.contrastText' : 'text.primary',
-            borderRadius: 3,
-            border: isUser ? 'none' : 1,
-            borderColor: 'divider',
-          }}
-        >
+        {/* Message content */}
+        <Box>
           {isUser ? (
-            <Typography sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+            <Box
+              sx={{
+                color: 'text.primary',
+                fontSize: '0.9375rem',
+                lineHeight: 1.6,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
+              }}
+            >
               {finalContent}
-            </Typography>
+            </Box>
           ) : (
             <Box
               className="markdown-content"
               sx={{
-                '& p': { mb: 1, '&:last-child': { mb: 0 } },
+                color: 'text.primary',
+                fontSize: '0.9375rem',
+                lineHeight: 1.6,
+                '& p': {
+                  mb: 1.5,
+                  '&:last-child': { mb: 0 },
+                },
+                '& h1, & h2, & h3, & h4, & h5, & h6': {
+                  fontWeight: 600,
+                  mt: 2,
+                  mb: 1,
+                  '&:first-of-type': { mt: 0 },
+                },
+                '& ul, & ol': {
+                  pl: 3,
+                  mb: 1.5,
+                },
+                '& li': {
+                  mb: 0.5,
+                },
                 '& pre': {
                   position: 'relative',
                   p: 2,
-                  borderRadius: 2,
+                  borderRadius: 1,
                   overflow: 'auto',
-                  bgcolor: 'rgba(0,0,0,0.05)',
+                  bgcolor: 'background.paper',
+                  border: 1,
+                  borderColor: 'divider',
+                  mb: 1.5,
                   '& code': {
-                    fontFamily: 'var(--font-roboto-mono)',
-                    fontSize: '0.875em',
+                    fontFamily: 'monospace',
+                    fontSize: '0.875rem',
+                    lineHeight: 1.6,
                   },
                 },
                 '& code': {
-                  fontFamily: 'var(--font-roboto-mono)',
-                  fontSize: '0.875em',
-                  bgcolor: 'rgba(0,0,0,0.05)',
-                  px: 0.5,
+                  fontFamily: 'monospace',
+                  fontSize: '0.875rem',
+                  bgcolor: 'action.hover',
+                  px: 0.75,
                   py: 0.25,
                   borderRadius: 0.5,
+                },
+                '& pre code': {
+                  bgcolor: 'transparent',
+                  p: 0,
                 },
                 '& table': {
                   width: '100%',
                   borderCollapse: 'collapse',
-                  mb: 2,
+                  mb: 1.5,
+                  fontSize: '0.875rem',
                 },
                 '& th, & td': {
                   border: 1,
                   borderColor: 'divider',
                   p: 1,
+                  textAlign: 'left',
+                },
+                '& th': {
+                  bgcolor: 'action.hover',
+                  fontWeight: 600,
+                },
+                '& blockquote': {
+                  borderLeft: 3,
+                  borderColor: 'divider',
+                  pl: 2,
+                  py: 0.5,
+                  my: 1.5,
+                  color: 'text.secondary',
+                },
+                '& a': {
+                  color: 'secondary.main',
+                  textDecoration: 'none',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  },
+                },
+                '& img': {
+                  maxWidth: '100%',
+                  borderRadius: 1,
                 },
               }}
             >
@@ -148,18 +198,19 @@ export default function Message({ message, isStreaming = false, onRegenerate, on
               </ReactMarkdown>
             </Box>
           )}
-        </Paper>
+        </Box>
 
         {/* Artifacts */}
         {!isUser && artifacts.length > 0 && (
-          <Box sx={{ mt: 1 }}>
+          <Box sx={{ mt: 1.5 }}>
             {artifacts.map((artifact) => (
               <Chip
                 key={artifact.id}
-                label={`📎 ${artifact.title}`}
+                icon={<CodeIcon sx={{ fontSize: 16 }} />}
+                label={artifact.title}
                 onClick={() => handleArtifactClick(artifact)}
                 sx={{ mr: 1, mb: 1 }}
-                color="primary"
+                size="small"
                 variant="outlined"
               />
             ))}
@@ -167,42 +218,42 @@ export default function Message({ message, isStreaming = false, onRegenerate, on
         )}
 
         {/* Actions */}
-        {!isStreaming && (
-          <Stack direction="row" spacing={0.5} sx={{ mt: 1 }}>
-            <Tooltip title={copied ? 'Tersalin!' : 'Salin'}>
-              <IconButton size="small" onClick={handleCopy}>
-                {copied ? <CheckIcon fontSize="small" /> : <ContentCopyIcon fontSize="small" />}
+        {!isStreaming && !isUser && (
+          <Stack
+            direction="row"
+            spacing={0.5}
+            sx={{
+              mt: 1,
+              opacity: 0.7,
+              '&:hover': { opacity: 1 },
+              transition: 'opacity 0.15s',
+            }}
+          >
+            <Tooltip title={copied ? 'Copied!' : 'Copy'} arrow>
+              <IconButton size="small" onClick={handleCopy} sx={{ color: 'text.secondary' }}>
+                {copied ? <CheckIcon sx={{ fontSize: 16 }} /> : <ContentCopyIcon sx={{ fontSize: 16 }} />}
               </IconButton>
             </Tooltip>
-
-            {!isUser && (
-              <>
-                <Tooltip title="Regenerate">
-                  <IconButton size="small" onClick={onRegenerate}>
-                    <RefreshIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Bagus">
-                  <IconButton size="small">
-                    <ThumbUpIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Kurang Bagus">
-                  <IconButton size="small">
-                    <ThumbDownIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </>
-            )}
-
-            {isUser && onEdit && (
-              <Tooltip title="Edit">
-                <IconButton size="small" onClick={() => onEdit(message.content)}>
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )}
           </Stack>
+        )}
+
+        {/* Streaming indicator */}
+        {isStreaming && (
+          <Box
+            sx={{
+              display: 'inline-block',
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              bgcolor: 'secondary.main',
+              mt: 1,
+              animation: 'pulse 1.5s ease-in-out infinite',
+              '@keyframes pulse': {
+                '0%, 100%': { opacity: 1 },
+                '50%': { opacity: 0.3 },
+              },
+            }}
+          />
         )}
       </Box>
     </Box>
@@ -232,18 +283,24 @@ function CodeCopyButton({ code }: { code: string }) {
   };
 
   return (
-    <IconButton
-      size="small"
-      onClick={handleCopy}
-      sx={{
-        position: 'absolute',
-        top: 8,
-        right: 8,
-        bgcolor: 'background.paper',
-        '&:hover': { bgcolor: 'action.hover' },
-      }}
-    >
-      {copied ? <CheckIcon fontSize="small" /> : <ContentCopyIcon fontSize="small" />}
-    </IconButton>
+    <Tooltip title={copied ? 'Copied!' : 'Copy code'} arrow>
+      <IconButton
+        size="small"
+        onClick={handleCopy}
+        sx={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          bgcolor: 'background.default',
+          border: 1,
+          borderColor: 'divider',
+          '&:hover': {
+            bgcolor: 'action.hover',
+          },
+        }}
+      >
+        {copied ? <CheckIcon sx={{ fontSize: 16 }} /> : <ContentCopyIcon sx={{ fontSize: 16 }} />}
+      </IconButton>
+    </Tooltip>
   );
 }

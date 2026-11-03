@@ -21,13 +21,13 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
   const [agentSupported, setAgentSupported] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load conversation and messages
+  // Load conversation and messages from DB
   const conversation = useLiveQuery(
     () => db.conversations.get(conversationId),
     [conversationId]
   );
 
-  const messages = useLiveQuery(
+  const dbMessages = useLiveQuery(
     () => db.messages.where('conversationId').equals(conversationId).sortBy('createdAt'),
     [conversationId]
   );
@@ -37,7 +37,7 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
     if (!exists) {
       await db.conversations.add({
         id: conversationId,
-        title: 'Percakapan Baru',
+        title: 'New Conversation',
         model: selectedModel,
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -75,7 +75,13 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
   }, [fetchDefaultModel]);
 
   // Chat hook for streaming
-  const { messages: streamMessages, append, isLoading, stop } = useChat({
+  const {
+    messages: streamMessages,
+    append,
+    isLoading,
+    stop,
+    setMessages,
+  } = useChat({
     api: '/api/chat',
     body: {
       model: selectedModel,
@@ -83,33 +89,30 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
       agentMode,
     },
     onFinish: async (message) => {
-      // Save assistant message
-      await saveMessage({
+      // Save assistant message to DB
+      await db.messages.add({
+        id: nanoid(),
+        conversationId,
         role: 'assistant',
         content: message.content,
+        createdAt: Date.now(),
       });
 
-      // Update conversation
+      // Update conversation timestamp
       await db.conversations.update(conversationId, {
         updatedAt: Date.now(),
       });
 
-      // Generate title if first message
-      if (messages && messages.length === 1) {
+      // Generate title if first exchange
+      const msgCount = await db.messages.where('conversationId').equals(conversationId).count();
+      if (msgCount === 2) {
         generateTitle();
       }
+
+      // Clear streaming messages after save
+      setMessages([]);
     },
   });
-
-  const saveMessage = async (message: { role: 'user' | 'assistant'; content: string }) => {
-    await db.messages.add({
-      id: nanoid(),
-      conversationId,
-      role: message.role,
-      content: message.content,
-      createdAt: Date.now(),
-    });
-  };
 
   const generateTitle = async () => {
     try {
@@ -128,7 +131,7 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
               content: m.content,
             })),
             model: selectedModel,
-            language: 'id',
+            language: 'en',
           }),
         });
 
@@ -147,18 +150,21 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
   const handleSend = async (content: string, useAgentMode?: boolean) => {
     if (!content.trim() || !selectedModel) return;
 
-    // Save user message
-    await saveMessage({
+    // Save user message to DB immediately
+    await db.messages.add({
+      id: nanoid(),
+      conversationId,
       role: 'user',
       content: content.trim(),
+      createdAt: Date.now(),
     });
 
-    // Update conversation
+    // Update conversation timestamp
     await db.conversations.update(conversationId, {
       updatedAt: Date.now(),
     });
 
-    // Send to AI
+    // Start streaming (this adds to streamMessages)
     await append({
       role: 'user',
       content: content.trim(),
@@ -169,13 +175,18 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
     stop();
   };
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, streamMessages]);
+  }, [dbMessages, streamMessages]);
+
+  // Get current streaming message (last assistant message being generated)
+  const streamingMessage = isLoading && streamMessages.length > 0
+    ? streamMessages[streamMessages.length - 1]
+    : undefined;
 
   // Empty state
-  const isEmpty = !messages || messages.length === 0;
+  const isEmpty = (!dbMessages || dbMessages.length === 0) && !isLoading;
 
   return (
     <Box
@@ -184,6 +195,7 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
+        bgcolor: 'background.default',
       }}
     >
       {/* Messages area */}
@@ -191,8 +203,15 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
         sx={{
           flexGrow: 1,
           overflow: 'auto',
-          px: { xs: 2, sm: 4 },
+          px: { xs: 2, sm: 3, md: 4 },
           py: 3,
+          '&::-webkit-scrollbar': {
+            width: 6,
+          },
+          '&::-webkit-scrollbar-thumb': {
+            bgcolor: 'divider',
+            borderRadius: 3,
+          },
         }}
       >
         {isEmpty ? (
@@ -206,33 +225,38 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
               maxWidth: 600,
               mx: 'auto',
               textAlign: 'center',
+              px: 2,
             }}
           >
             <Typography variant="h4" gutterBottom fontWeight={600}>
-              Halo! Bagaimana saya bisa membantu Anda hari ini?
+              How can I help you today?
             </Typography>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-              Tanyakan apa saja, saya siap membantu
+              Ask me anything, I'm here to help
             </Typography>
             <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center">
               {[
-                'Jelaskan konsep quantum computing',
-                'Buatkan halaman web interaktif',
-                'Bantu saya menganalisis data',
-                'Tulis cerita pendek',
+                'Explain quantum computing',
+                'Create an interactive webpage',
+                'Help me analyze data',
+                'Write a short story',
               ].map((suggestion, index) => (
                 <Chip
                   key={index}
                   label={suggestion}
                   onClick={() => handleSend(suggestion)}
                   sx={{ m: 0.5 }}
+                  variant="outlined"
                 />
               ))}
             </Stack>
           </Box>
         ) : (
           <>
-            <MessageList messages={messages || []} streamingMessage={isLoading ? streamMessages[streamMessages.length - 1] : undefined} />
+            <MessageList
+              messages={dbMessages || []}
+              streamingMessage={streamingMessage}
+            />
             <div ref={messagesEndRef} />
           </>
         )}
@@ -244,7 +268,7 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
           borderTop: 1,
           borderColor: 'divider',
           bgcolor: 'background.paper',
-          px: { xs: 2, sm: 4 },
+          px: { xs: 2, sm: 3, md: 4 },
           py: 2,
         }}
       >
