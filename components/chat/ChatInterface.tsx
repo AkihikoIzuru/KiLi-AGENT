@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Box, Typography, Chip, Stack } from '@mui/material';
+import { Box, Typography, Chip, Stack, Alert } from '@mui/material';
 import { db, type Message, type Conversation } from '@/lib/db/dexie';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { nanoid } from 'nanoid';
@@ -19,6 +19,7 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
   const [selectedModel, setSelectedModel] = useState('');
   const [agentMode, setAgentMode] = useState(false);
   const [agentSupported, setAgentSupported] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Load conversation and messages from DB
@@ -81,14 +82,16 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
     isLoading,
     stop,
     setMessages,
+    error: chatError,
   } = useChat({
     api: '/api/chat',
     body: {
       model: selectedModel,
-      conversationId,
       agentMode,
     },
     onFinish: async (message) => {
+      console.log('✅ Stream finished, saving to DB:', message.content.substring(0, 50));
+
       // Save assistant message to DB
       await db.messages.add({
         id: nanoid(),
@@ -111,6 +114,11 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
 
       // Clear streaming messages after save
       setMessages([]);
+      setError(null);
+    },
+    onError: (error) => {
+      console.error('❌ Chat error:', error);
+      setError(error.message || 'Failed to send message');
     },
   });
 
@@ -148,30 +156,46 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
   };
 
   const handleSend = async (content: string, useAgentMode?: boolean) => {
-    if (!content.trim() || !selectedModel) return;
+    if (!content.trim() || !selectedModel) {
+      console.warn('⚠️ Cannot send: missing content or model');
+      return;
+    }
 
-    // Save user message to DB immediately
-    await db.messages.add({
-      id: nanoid(),
-      conversationId,
-      role: 'user',
-      content: content.trim(),
-      createdAt: Date.now(),
-    });
+    console.log('📤 Sending message:', { content: content.substring(0, 50), model: selectedModel });
 
-    // Update conversation timestamp
-    await db.conversations.update(conversationId, {
-      updatedAt: Date.now(),
-    });
+    setError(null);
 
-    // Start streaming (this adds to streamMessages)
-    await append({
-      role: 'user',
-      content: content.trim(),
-    });
+    try {
+      // Save user message to DB immediately
+      await db.messages.add({
+        id: nanoid(),
+        conversationId,
+        role: 'user',
+        content: content.trim(),
+        createdAt: Date.now(),
+      });
+
+      console.log('✅ User message saved to DB');
+
+      // Update conversation timestamp
+      await db.conversations.update(conversationId, {
+        updatedAt: Date.now(),
+      });
+
+      // Start streaming (this adds to streamMessages)
+      console.log('🚀 Starting stream...');
+      await append({
+        role: 'user',
+        content: content.trim(),
+      });
+    } catch (err) {
+      console.error('❌ Error in handleSend:', err);
+      setError(err instanceof Error ? err.message : 'Failed to send message');
+    }
   };
 
   const handleStop = () => {
+    console.log('⏹️ Stopping stream');
     stop();
   };
 
@@ -180,10 +204,25 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [dbMessages, streamMessages]);
 
+  // Log chat error
+  useEffect(() => {
+    if (chatError) {
+      console.error('🔴 useChat error:', chatError);
+    }
+  }, [chatError]);
+
   // Get current streaming message (last assistant message being generated)
   const streamingMessage = isLoading && streamMessages.length > 0
     ? streamMessages[streamMessages.length - 1]
     : undefined;
+
+  console.log('📊 State:', {
+    dbMessages: dbMessages?.length || 0,
+    streamMessages: streamMessages.length,
+    isLoading,
+    hasStreamingMessage: !!streamingMessage,
+    selectedModel,
+  });
 
   // Empty state
   const isEmpty = (!dbMessages || dbMessages.length === 0) && !isLoading;
@@ -214,6 +253,12 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
           },
         }}
       >
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
+            {error}
+          </Alert>
+        )}
+
         {isEmpty ? (
           <Box
             sx={{
