@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Select,
@@ -17,11 +17,7 @@ export default function TopBar() {
   const [models, setModels] = useState<Array<{ id: string; label: string }>>([]);
   const [selectedModel, setSelectedModel] = useState('');
 
-  useEffect(() => {
-    fetchModels();
-  }, []);
-
-  const fetchModels = async () => {
+  const fetchModels = useCallback(async () => {
     try {
       const response = await fetch('/api/models');
       if (response.ok) {
@@ -34,7 +30,11 @@ export default function TopBar() {
     } catch (error) {
       console.error('Failed to fetch models:', error);
     }
-  };
+  }, [selectedModel]);
+
+  useEffect(() => {
+    fetchModels();
+  }, [fetchModels]);
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '100%' }}>

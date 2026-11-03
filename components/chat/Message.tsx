@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Paper, Typography, IconButton, Tooltip, Stack } from '@mui/material';
+import { Box, Paper, Typography, IconButton, Tooltip, Stack, Chip } from '@mui/material';
 import PersonIcon from '@mui/icons-material/PersonRounded';
 import SmartToyIcon from '@mui/icons-material/SmartToyRounded';
 import ContentCopyIcon from '@mui/icons-material/ContentCopyRounded';
