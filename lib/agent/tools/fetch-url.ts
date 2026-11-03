@@ -22,8 +22,9 @@ function isBlockedHost(hostname: string): boolean {
   return BLOCKED_HOSTS.some((pattern) => pattern.test(hostname));
 }
 
-async function fetchUrl(input: FetchUrlInput): Promise<string> {
-  const { url } = input;
+async function fetchUrl(input: unknown, ctx: { signal: AbortSignal }): Promise<string> {
+  const parsed = FetchUrlInputSchema.parse(input);
+  const { url } = parsed;
 
   // Parse URL and check for SSRF
   let parsedUrl: URL;
@@ -87,7 +88,8 @@ async function fetchUrl(input: FetchUrlInput): Promise<string> {
 registerTool({
   name: 'fetch_url',
   description: 'Fetch content from a web URL. Only HTTP/HTTPS URLs are allowed. Private/local addresses are blocked for security.',
-  inputSchema: FetchUrlInputSchema,
-  riskLevel: 'medium',
+  input: FetchUrlInputSchema,
+  risk: 'confirm',
+  timeoutMs: 15000,
   run: fetchUrl,
 });
