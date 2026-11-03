@@ -17,6 +17,8 @@ interface ChatInterfaceProps {
 export default function ChatInterface({ conversationId, isNew = false }: ChatInterfaceProps) {
   const [initialized, setInitialized] = useState(false);
   const [selectedModel, setSelectedModel] = useState('');
+  const [agentMode, setAgentMode] = useState(false);
+  const [agentSupported, setAgentSupported] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Load conversation and messages
@@ -49,7 +51,9 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
       if (response.ok) {
         const data = await response.json();
         if (data.models?.length > 0) {
-          setSelectedModel(conversation?.model || data.models[0].id);
+          const model = data.models.find((m: any) => m.id === conversation?.model) || data.models[0];
+          setSelectedModel(model.id);
+          setAgentSupported(model.tools !== false);
         }
       }
     } catch (error) {
@@ -76,6 +80,7 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
     body: {
       model: selectedModel,
       conversationId,
+      agentMode,
     },
     onFinish: async (message) => {
       // Save assistant message
@@ -139,7 +144,7 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
     }
   };
 
-  const handleSend = async (content: string) => {
+  const handleSend = async (content: string, useAgentMode?: boolean) => {
     if (!content.trim() || !selectedModel) return;
 
     // Save user message
@@ -248,6 +253,9 @@ export default function ChatInterface({ conversationId, isNew = false }: ChatInt
           onStop={handleStop}
           isLoading={isLoading}
           disabled={!selectedModel}
+          agentMode={agentMode}
+          onAgentModeChange={setAgentMode}
+          agentSupported={agentSupported}
         />
       </Box>
     </Box>

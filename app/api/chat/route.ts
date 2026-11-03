@@ -4,6 +4,8 @@ import { getModel } from '@/lib/ai/provider';
 import { buildSystemPrompt } from '@/lib/ai/system-prompt';
 import { streamText } from 'ai';
 import { z } from 'zod';
+import { convertToolsForAISDK } from '@/lib/agent/adapter';
+import '@/lib/agent'; // Import to register all tools
 
 export const maxDuration = 60;
 
@@ -55,16 +57,26 @@ export async function POST(req: NextRequest) {
 
     const model = getModel(modelId);
 
-    // Stream response
-    const result = await streamText({
+    // If agent mode is enabled, include tools
+    const streamConfig: any = {
       model,
       messages: messagesWithSystem,
       temperature,
       maxTokens,
-      onFinish: async ({ text, finishReason }) => {
+      onFinish: async ({ text, finishReason }: any) => {
         console.log('Stream finished:', { finishReason, length: text.length });
       },
-    });
+    };
+
+    // Add tools if agent mode is enabled
+    if (agentMode) {
+      const tools = convertToolsForAISDK();
+      streamConfig.tools = tools;
+      streamConfig.maxSteps = parseInt(process.env.AGENT_MAX_STEPS || '10');
+    }
+
+    // Stream response
+    const result = await streamText(streamConfig);
 
     return result.toDataStreamResponse();
   } catch (error) {

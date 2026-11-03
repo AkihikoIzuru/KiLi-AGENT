@@ -15,12 +15,13 @@ import AttachFileIcon from '@mui/icons-material/AttachFileRounded';
 import SmartToyIcon from '@mui/icons-material/SmartToyRounded';
 
 interface ComposerProps {
-  onSend: (message: string) => void;
+  onSend: (message: string, agentMode?: boolean) => void;
   onStop: () => void;
   isLoading: boolean;
   disabled?: boolean;
   agentMode?: boolean;
   onAgentModeChange?: (enabled: boolean) => void;
+  agentSupported?: boolean;
 }
 
 export default function Composer({
@@ -30,13 +31,14 @@ export default function Composer({
   disabled = false,
   agentMode = false,
   onAgentModeChange,
+  agentSupported = true,
 }: ComposerProps) {
   const [message, setMessage] = useState('');
   const textFieldRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSend = () => {
     if (message.trim() && !isLoading) {
-      onSend(message);
+      onSend(message.trim(), agentMode);
       setMessage('');
 
       // Reset textarea height
@@ -103,17 +105,19 @@ export default function Composer({
 
         {/* Agent mode toggle */}
         {onAgentModeChange && (
-          <Tooltip title="Mode Agent">
-            <ToggleButton
-              value="agent"
-              selected={agentMode}
-              onChange={() => onAgentModeChange(!agentMode)}
-              size="small"
-              disabled={isLoading || disabled}
-              sx={{ border: 'none', mr: 0.5 }}
-            >
-              <SmartToyIcon fontSize="small" />
-            </ToggleButton>
+          <Tooltip title={agentSupported ? "Mode Agent" : "Model tidak mendukung Agent"}>
+            <span>
+              <ToggleButton
+                value="agent"
+                selected={agentMode}
+                onChange={() => onAgentModeChange(!agentMode)}
+                size="small"
+                disabled={isLoading || disabled || !agentSupported}
+                sx={{ border: 'none', mr: 0.5 }}
+              >
+                <SmartToyIcon fontSize="small" />
+              </ToggleButton>
+            </span>
           </Tooltip>
         )}
 
