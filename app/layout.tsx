@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { roboto, robotoMono } from '@/components/theme/theme';
+import { inter } from '@/components/theme/theme';
 import ThemeProvider from '@/components/theme/ThemeProvider';
 import './globals.css';
 
@@ -15,7 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id" suppressHydrationWarning>
-      <body className={`${roboto.className} ${robotoMono.variable}`}>
+      <body className={inter.className}>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

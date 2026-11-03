@@ -4,19 +4,18 @@ import { ReactNode, useState } from 'react';
 import {
   Box,
   Drawer,
-  AppBar,
-  Toolbar,
   IconButton,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/MenuRounded';
+import CloseIcon from '@mui/icons-material/CloseRounded';
 import Sidebar from '@/components/layout/Sidebar';
 import TopBar from '@/components/layout/TopBar';
 import ArtifactPanel from '@/components/artifacts/ArtifactPanel';
 import { type ParsedArtifact } from '@/lib/artifact/parser';
 
-const DRAWER_WIDTH = 280;
+const DRAWER_WIDTH = 260;
 const ARTIFACT_WIDTH = 480;
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -29,113 +28,116 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     setMobileOpen(!mobileOpen);
   };
 
-  // Pass artifact handlers to children via context or props
-  // For now, we'll use window event
+  // Global artifact handler
   if (typeof window !== 'undefined') {
     (window as any).showArtifact = setCurrentArtifact;
   }
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      {/* Sidebar */}
-      <Box
-        component="nav"
-        sx={{
-          width: { md: DRAWER_WIDTH },
-          flexShrink: { md: 0 },
-        }}
-      >
-        {/* Mobile drawer */}
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true, // Better mobile performance
-          }}
+    <Box
+      sx={{
+        display: 'flex',
+        height: '100vh',
+        width: '100vw',
+        overflow: 'hidden',
+        bgcolor: 'background.default',
+      }}
+    >
+      {/* Sidebar - Desktop */}
+      {!isMobile && (
+        <Box
           sx={{
-            display: { xs: 'block', md: 'none' },
-            '& .MuiDrawer-paper': {
-              width: DRAWER_WIDTH,
-              boxSizing: 'border-box',
-            },
+            width: DRAWER_WIDTH,
+            flexShrink: 0,
+            height: '100vh',
+            borderRight: 1,
+            borderColor: 'divider',
+            display: 'flex',
+            flexDirection: 'column',
           }}
-        >
-          <Sidebar onClose={handleDrawerToggle} />
-        </Drawer>
-
-        {/* Desktop drawer */}
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', md: 'block' },
-            '& .MuiDrawer-paper': {
-              width: DRAWER_WIDTH,
-              boxSizing: 'border-box',
-              borderRight: 1,
-              borderColor: 'divider',
-            },
-          }}
-          open
         >
           <Sidebar />
-        </Drawer>
-      </Box>
+        </Box>
+      )}
 
-      {/* Main content */}
+      {/* Sidebar - Mobile Drawer */}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={handleDrawerToggle}
+        ModalProps={{
+          keepMounted: true,
+        }}
+        sx={{
+          display: { xs: 'block', md: 'none' },
+          '& .MuiDrawer-paper': {
+            width: DRAWER_WIDTH,
+            boxSizing: 'border-box',
+            border: 'none',
+          },
+        }}
+      >
+        <Sidebar onClose={handleDrawerToggle} />
+      </Drawer>
+
+      {/* Main Content Area */}
       <Box
-        component="main"
         sx={{
           flexGrow: 1,
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          width: {
-            md: currentArtifact
-              ? `calc(100% - ${DRAWER_WIDTH + ARTIFACT_WIDTH}px)`
-              : `calc(100% - ${DRAWER_WIDTH}px)`
-          },
+          minWidth: 0,
         }}
       >
-        {/* Top bar */}
-        <AppBar
-          position="static"
-          color="default"
-          elevation={0}
+        {/* Top Bar */}
+        <Box
           sx={{
+            display: 'flex',
+            alignItems: 'center',
+            height: 56,
             borderBottom: 1,
             borderColor: 'divider',
-            bgcolor: 'background.paper',
+            bgcolor: 'background.default',
+            px: isMobile ? 1 : 0,
           }}
         >
-          <Toolbar>
-            {isMobile && (
-              <IconButton
-                edge="start"
-                onClick={handleDrawerToggle}
-                sx={{ mr: 2 }}
-                aria-label="open menu"
-              >
-                <MenuIcon />
-              </IconButton>
-            )}
-            <TopBar />
-          </Toolbar>
-        </AppBar>
+          {isMobile && (
+            <IconButton
+              edge="start"
+              onClick={handleDrawerToggle}
+              size="small"
+              sx={{ mr: 1 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
+          <TopBar />
+        </Box>
 
-        {/* Chat area */}
-        <Box sx={{ flexGrow: 1, overflow: 'hidden' }}>
+        {/* Chat Area */}
+        <Box
+          sx={{
+            flexGrow: 1,
+            overflow: 'hidden',
+            position: 'relative',
+          }}
+        >
           {children}
         </Box>
       </Box>
 
-      {/* Artifact Panel */}
+      {/* Artifact Panel - Desktop */}
       {currentArtifact && !isMobile && (
         <Box
           sx={{
             width: ARTIFACT_WIDTH,
             flexShrink: 0,
             height: '100vh',
+            borderLeft: 1,
+            borderColor: 'divider',
+            display: 'flex',
+            flexDirection: 'column',
             overflow: 'hidden',
           }}
         >
@@ -146,7 +148,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </Box>
       )}
 
-      {/* Mobile artifact (full screen) */}
+      {/* Artifact Panel - Mobile Drawer */}
       {currentArtifact && isMobile && (
         <Drawer
           anchor="right"
@@ -155,9 +157,24 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           sx={{
             '& .MuiDrawer-paper': {
               width: '100%',
+              border: 'none',
             },
           }}
         >
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              p: 1,
+              borderBottom: 1,
+              borderColor: 'divider',
+            }}
+          >
+            <IconButton onClick={() => setCurrentArtifact(null)} size="small">
+              <CloseIcon />
+            </IconButton>
+          </Box>
           <ArtifactPanel
             artifact={currentArtifact}
             onClose={() => setCurrentArtifact(null)}

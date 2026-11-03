@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Box,
@@ -13,7 +13,6 @@ import {
   InputAdornment,
   Button,
   Typography,
-  Divider,
   Menu,
   MenuItem,
   Dialog,
@@ -29,6 +28,7 @@ import SettingsIcon from '@mui/icons-material/SettingsRounded';
 import EditIcon from '@mui/icons-material/EditRounded';
 import DeleteIcon from '@mui/icons-material/DeleteRounded';
 import DownloadIcon from '@mui/icons-material/DownloadRounded';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
 import { db, type Conversation } from '@/lib/db/dexie';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { nanoid } from 'nanoid';
@@ -132,7 +132,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
     setSelectedConversation(null);
   };
 
-  // Group conversations by date
+  // Group conversations
   const groupedConversations = conversations?.reduce((groups, conv) => {
     const now = Date.now();
     const convDate = conv.updatedAt;
@@ -140,13 +140,13 @@ export default function Sidebar({ onClose }: SidebarProps) {
 
     let group: string;
     if (now - convDate < dayMs) {
-      group = 'Hari ini';
-    } else if (now - convDate < 2 * dayMs) {
-      group = 'Kemarin';
+      group = 'Today';
     } else if (now - convDate < 7 * dayMs) {
-      group = '7 hari terakhir';
+      group = 'Last 7 days';
+    } else if (now - convDate < 30 * dayMs) {
+      group = 'Last 30 days';
     } else {
-      group = 'Lebih lama';
+      group = 'Older';
     }
 
     if (!groups[group]) groups[group] = [];
@@ -154,76 +154,101 @@ export default function Sidebar({ onClose }: SidebarProps) {
     return groups;
   }, {} as Record<string, Conversation[]>);
 
-  // Separate pinned conversations
   const pinnedConversations = conversations?.filter(c => c.pinned) || [];
-  const groupOrder = ['Hari ini', 'Kemarin', '7 hari terakhir', 'Lebih lama'];
+  const groupOrder = ['Today', 'Last 7 days', 'Last 30 days', 'Older'];
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', p: 2 }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        bgcolor: 'background.default',
+      }}
+    >
       {/* Header */}
-      <Box sx={{ mb: 2 }}>
+      <Box sx={{ p: 2, pb: 1.5 }}>
         <Button
           fullWidth
           variant="contained"
+          color="primary"
           startIcon={<AddIcon />}
           onClick={handleNewChat}
-          sx={{ mb: 2 }}
+          sx={{ mb: 1.5, justifyContent: 'flex-start', px: 2 }}
         >
-          Chat Baru
+          New Chat
         </Button>
 
         <TextField
           fullWidth
           size="small"
-          placeholder="Cari percakapan..."
+          placeholder="Search..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <SearchIcon />
+                <SearchIcon fontSize="small" sx={{ color: 'text.secondary' }} />
               </InputAdornment>
             ),
+          }}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              bgcolor: 'background.paper',
+            },
           }}
         />
       </Box>
 
       {/* Conversation list */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
-        <List sx={{ py: 0 }}>
-          {/* Pinned conversations */}
-          {pinnedConversations.length > 0 && (
-            <>
-              <ListItem sx={{ px: 1, py: 0.5 }}>
-                <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                  Disematkan
-                </Typography>
-              </ListItem>
-              {pinnedConversations.map((conv) => (
-                <ConversationItem
-                  key={conv.id}
-                  conversation={conv}
-                  onClick={() => handleConversationClick(conv.id)}
-                  onMenuClick={(e) => handleMenuOpen(e, conv)}
-                />
-              ))}
-              <Divider sx={{ my: 1 }} />
-            </>
-          )}
-
-          {/* Grouped conversations */}
-          {groupedConversations && groupOrder.map((group) => {
-            const convs = groupedConversations[group]?.filter(c => !c.pinned);
-            if (!convs || convs.length === 0) return null;
-
-            return (
-              <Box key={group}>
-                <ListItem sx={{ px: 1, py: 0.5 }}>
-                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                    {group}
+      <Box
+        sx={{
+          flexGrow: 1,
+          overflow: 'auto',
+          px: 1,
+          '&::-webkit-scrollbar': {
+            width: 6,
+          },
+          '&::-webkit-scrollbar-thumb': {
+            bgcolor: 'divider',
+            borderRadius: 3,
+          },
+        }}
+      >
+        {conversations && conversations.length === 0 ? (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '200px',
+              color: 'text.secondary',
+            }}
+          >
+            <ChatBubbleOutlineIcon sx={{ fontSize: 48, mb: 1, opacity: 0.3 }} />
+            <Typography variant="body2">No conversations yet</Typography>
+          </Box>
+        ) : (
+          <List sx={{ py: 0 }}>
+            {/* Pinned */}
+            {pinnedConversations.length > 0 && (
+              <>
+                <ListItem sx={{ px: 1, py: 1, minHeight: 0 }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: 'text.secondary',
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      fontSize: '0.6875rem',
+                    }}
+                  >
+                    Pinned
                   </Typography>
                 </ListItem>
-                {convs.map((conv) => (
+                {pinnedConversations.map((conv) => (
                   <ConversationItem
                     key={conv.id}
                     conversation={conv}
@@ -231,23 +256,74 @@ export default function Sidebar({ onClose }: SidebarProps) {
                     onMenuClick={(e) => handleMenuOpen(e, conv)}
                   />
                 ))}
-              </Box>
-            );
-          })}
-        </List>
+                <Box sx={{ height: 12 }} />
+              </>
+            )}
+
+            {/* Grouped */}
+            {groupedConversations && groupOrder.map((group) => {
+              const convs = groupedConversations[group]?.filter(c => !c.pinned);
+              if (!convs || convs.length === 0) return null;
+
+              return (
+                <Box key={group}>
+                  <ListItem sx={{ px: 1, py: 1, minHeight: 0 }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: 'text.secondary',
+                        fontWeight: 600,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        fontSize: '0.6875rem',
+                      }}
+                    >
+                      {group}
+                    </Typography>
+                  </ListItem>
+                  {convs.map((conv) => (
+                    <ConversationItem
+                      key={conv.id}
+                      conversation={conv}
+                      onClick={() => handleConversationClick(conv.id)}
+                      onMenuClick={(e) => handleMenuOpen(e, conv)}
+                    />
+                  ))}
+                  <Box sx={{ height: 8 }} />
+                </Box>
+              );
+            })}
+          </List>
+        )}
       </Box>
 
       {/* Footer */}
-      <Box sx={{ pt: 2, borderTop: 1, borderColor: 'divider' }}>
+      <Box
+        sx={{
+          p: 2,
+          pt: 1.5,
+          borderTop: 1,
+          borderColor: 'divider',
+        }}
+      >
         <Button
           fullWidth
+          variant="text"
           startIcon={<SettingsIcon />}
           onClick={() => {
             router.push('/settings');
             onClose?.();
           }}
+          sx={{
+            justifyContent: 'flex-start',
+            color: 'text.secondary',
+            '&:hover': {
+              color: 'text.primary',
+              bgcolor: 'action.hover',
+            },
+          }}
         >
-          Pengaturan
+          Settings
         </Button>
       </Box>
 
@@ -257,22 +333,22 @@ export default function Sidebar({ onClose }: SidebarProps) {
         open={Boolean(menuAnchor)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={handlePin}>
-          <PushPinIcon sx={{ mr: 1, fontSize: 20 }} />
-          {selectedConversation?.pinned ? 'Lepas Pin' : 'Pin'}
+        <MenuItem onClick={handlePin} sx={{ fontSize: '0.875rem' }}>
+          <PushPinIcon sx={{ mr: 1.5, fontSize: 18 }} />
+          {selectedConversation?.pinned ? 'Unpin' : 'Pin'}
         </MenuItem>
-        <MenuItem onClick={handleRename}>
-          <EditIcon sx={{ mr: 1, fontSize: 20 }} />
-          Ganti Nama
+        <MenuItem onClick={handleRename} sx={{ fontSize: '0.875rem' }}>
+          <EditIcon sx={{ mr: 1.5, fontSize: 18 }} />
+          Rename
         </MenuItem>
-        <MenuItem onClick={handleExport}>
-          <DownloadIcon sx={{ mr: 1, fontSize: 20 }} />
-          Ekspor ke Markdown
+        <MenuItem onClick={handleExport} sx={{ fontSize: '0.875rem' }}>
+          <DownloadIcon sx={{ mr: 1.5, fontSize: 18 }} />
+          Export
         </MenuItem>
-        <Divider />
-        <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
-          <DeleteIcon sx={{ mr: 1, fontSize: 20 }} />
-          Hapus
+        <Box sx={{ my: 0.5, borderTop: 1, borderColor: 'divider' }} />
+        <MenuItem onClick={handleDelete} sx={{ color: 'error.main', fontSize: '0.875rem' }}>
+          <DeleteIcon sx={{ mr: 1.5, fontSize: 18 }} />
+          Delete
         </MenuItem>
       </Menu>
 
@@ -284,18 +360,25 @@ export default function Sidebar({ onClose }: SidebarProps) {
         onRename={handleRenameSubmit}
       />
 
-      {/* Delete confirmation dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Hapus Percakapan?</DialogTitle>
+      {/* Delete confirmation */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ pb: 1 }}>Delete conversation?</DialogTitle>
         <DialogContent>
-          <Typography>
-            Yakin ingin menghapus percakapan ini? Tindakan ini tidak dapat dibatalkan.
+          <Typography variant="body2" color="text.secondary">
+            This conversation will be permanently deleted. This action cannot be undone.
           </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Batal</Button>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={() => setDeleteDialogOpen(false)} variant="text">
+            Cancel
+          </Button>
           <Button onClick={confirmDelete} color="error" variant="contained">
-            Hapus
+            Delete
           </Button>
         </DialogActions>
       </Dialog>
@@ -315,18 +398,45 @@ function ConversationItem({
   return (
     <ListItem
       disablePadding
+      sx={{
+        mb: 0.5,
+        '&:hover .menu-button': {
+          opacity: 1,
+        },
+      }}
       secondaryAction={
-        <IconButton edge="end" size="small" onClick={onMenuClick}>
+        <IconButton
+          className="menu-button"
+          edge="end"
+          size="small"
+          onClick={onMenuClick}
+          sx={{
+            opacity: 0,
+            transition: 'opacity 0.15s',
+          }}
+        >
           <MoreVertIcon fontSize="small" />
         </IconButton>
       }
     >
-      <ListItemButton onClick={onClick} sx={{ borderRadius: 2 }}>
+      <ListItemButton
+        onClick={onClick}
+        sx={{
+          borderRadius: 1,
+          px: 1.5,
+          py: 1,
+          minHeight: 0,
+          '&:hover': {
+            bgcolor: 'action.hover',
+          },
+        }}
+      >
         <ListItemText
-          primary={conversation.title || 'Percakapan Baru'}
+          primary={conversation.title || 'New conversation'}
           primaryTypographyProps={{
             noWrap: true,
             fontSize: '0.875rem',
+            fontWeight: 400,
           }}
         />
       </ListItemButton>
