@@ -16,7 +16,9 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeSanitize from 'rehype-sanitize';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { parseArtifacts, extractThinking } from '@/lib/artifact/parser';
+import ThinkingBlock from './ThinkingBlock';
 import 'katex/dist/katex.min.css';
 import 'highlight.js/styles/github-dark.css';
 
@@ -30,6 +32,17 @@ interface MessageProps {
 export default function Message({ message, isStreaming = false, onRegenerate, onEdit }: MessageProps) {
   const isUser = message.role === 'user';
   const [copied, setCopied] = useState(false);
+
+  // Parse artifacts and thinking from content
+  const { text: contentWithoutArtifacts, artifacts } = parseArtifacts(message.content);
+  const { text: finalContent, thinking } = extractThinking(contentWithoutArtifacts);
+
+  // Show artifact in panel when clicked
+  const handleArtifactClick = (artifact: any) => {
+    if (typeof window !== 'undefined' && (window as any).showArtifact) {
+      (window as any).showArtifact(artifact);
+    }
+  };
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -65,6 +78,9 @@ export default function Message({ message, isStreaming = false, onRegenerate, on
 
       {/* Content */}
       <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+        {/* Thinking block */}
+        {!isUser && thinking && <ThinkingBlock thinking={thinking} />}
+
         <Paper
           elevation={0}
           sx={{
@@ -78,7 +94,7 @@ export default function Message({ message, isStreaming = false, onRegenerate, on
         >
           {isUser ? (
             <Typography sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-              {message.content}
+              {finalContent}
             </Typography>
           ) : (
             <Box
@@ -128,11 +144,27 @@ export default function Message({ message, isStreaming = false, onRegenerate, on
                   ),
                 }}
               >
-                {message.content}
+                {finalContent}
               </ReactMarkdown>
             </Box>
           )}
         </Paper>
+
+        {/* Artifacts */}
+        {!isUser && artifacts.length > 0 && (
+          <Box sx={{ mt: 1 }}>
+            {artifacts.map((artifact) => (
+              <Chip
+                key={artifact.id}
+                label={`📎 ${artifact.title}`}
+                onClick={() => handleArtifactClick(artifact)}
+                sx={{ mr: 1, mb: 1 }}
+                color="primary"
+                variant="outlined"
+              />
+            ))}
+          </Box>
+        )}
 
         {/* Actions */}
         {!isStreaming && (

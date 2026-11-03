@@ -13,17 +13,27 @@ import {
 import MenuIcon from '@mui/icons-material/MenuRounded';
 import Sidebar from '@/components/layout/Sidebar';
 import TopBar from '@/components/layout/TopBar';
+import ArtifactPanel from '@/components/artifacts/ArtifactPanel';
+import { type ParsedArtifact } from '@/lib/artifact/parser';
 
 const DRAWER_WIDTH = 280;
+const ARTIFACT_WIDTH = 480;
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [currentArtifact, setCurrentArtifact] = useState<ParsedArtifact | null>(null);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
+
+  // Pass artifact handlers to children via context or props
+  // For now, we'll use window event
+  if (typeof window !== 'undefined') {
+    (window as any).showArtifact = setCurrentArtifact;
+  }
 
   return (
     <Box sx={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
@@ -80,7 +90,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
+          width: {
+            md: currentArtifact
+              ? `calc(100% - ${DRAWER_WIDTH + ARTIFACT_WIDTH}px)`
+              : `calc(100% - ${DRAWER_WIDTH}px)`
+          },
         }}
       >
         {/* Top bar */}
@@ -114,6 +128,42 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           {children}
         </Box>
       </Box>
+
+      {/* Artifact Panel */}
+      {currentArtifact && !isMobile && (
+        <Box
+          sx={{
+            width: ARTIFACT_WIDTH,
+            flexShrink: 0,
+            height: '100vh',
+            overflow: 'hidden',
+          }}
+        >
+          <ArtifactPanel
+            artifact={currentArtifact}
+            onClose={() => setCurrentArtifact(null)}
+          />
+        </Box>
+      )}
+
+      {/* Mobile artifact (full screen) */}
+      {currentArtifact && isMobile && (
+        <Drawer
+          anchor="right"
+          open
+          onClose={() => setCurrentArtifact(null)}
+          sx={{
+            '& .MuiDrawer-paper': {
+              width: '100%',
+            },
+          }}
+        >
+          <ArtifactPanel
+            artifact={currentArtifact}
+            onClose={() => setCurrentArtifact(null)}
+          />
+        </Drawer>
+      )}
     </Box>
   );
 }
