@@ -1,0 +1,106 @@
+{
+  "app": {
+    "title": "KiLi AGENT",
+    "newChat": "Chat Baru",
+    "search": "Cari percakapan...",
+    "settings": "Pengaturan",
+    "projects": "Projects",
+    "history": "Riwayat"
+  },
+  "chat": {
+    "composer": {
+      "placeholder": "Ketik pesan Anda...",
+      "send": "Kirim",
+      "stop": "Berhenti",
+      "agentMode": "Mode Agent",
+      "attachFile": "Lampirkan File"
+    },
+    "message": {
+      "regenerate": "Regenerate",
+      "edit": "Edit",
+      "copy": "Salin",
+      "thumbsUp": "Bagus",
+      "thumbsDown": "Kurang Bagus",
+      "thinking": "Berpikir...",
+      "plan": "Rencana"
+    },
+    "empty": {
+      "greeting": "Halo! Bagaimana saya bisa membantu Anda hari ini?",
+      "suggestions": [
+        "Jelaskan konsep quantum computing",
+        "Buatkan halaman web interaktif",
+        "Bantu saya menganalisis data",
+        "Tulis cerita pendek"
+      ]
+    }
+  },
+  "sidebar": {
+    "today": "Hari ini",
+    "yesterday": "Kemarin",
+    "lastWeek": "7 hari terakhir",
+    "older": "Lebih lama",
+    "rename": "Ganti Nama",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "delete": "Hapus",
+    "deleteConfirm": "Yakin ingin menghapus percakapan ini?"
+  },
+  "artifact": {
+    "preview": "Pratinjau",
+    "code": "Kode",
+    "copy": "Salin",
+    "download": "Unduh",
+    "close": "Tutup",
+    "versions": "Versi"
+  },
+  "settings": {
+    "title": "Pengaturan",
+    "general": "Umum",
+    "theme": "Tema",
+    "themeLight": "Terang",
+    "themeDark": "Gelap",
+    "themeSystem": "Ikuti Sistem",
+    "language": "Bahasa",
+    "languageId": "Indonesia",
+    "languageEn": "English",
+    "customInstructions": "Instruksi Kustom",
+    "customInstructionsPlaceholder": "Tambahkan instruksi kustom untuk AI...",
+    "model": "Model Default",
+    "temperature": "Temperature",
+    "maxTokens": "Max Tokens",
+    "exportData": "Ekspor Data",
+    "importData": "Impor Data",
+    "clearData": "Hapus Semua Data",
+    "clearDataConfirm": "Yakin ingin menghapus semua data? Tindakan ini tidak dapat dibatalkan."
+  },
+  "auth": {
+    "login": "Masuk",
+    "password": "Password",
+    "passwordPlaceholder": "Masukkan password",
+    "loginButton": "Masuk",
+    "loginError": "Password salah",
+    "logout": "Keluar"
+  },
+  "error": {
+    "generic": "Terjadi kesalahan",
+    "network": "Kesalahan jaringan. Periksa koneksi Anda.",
+    "unauthorized": "API key salah atau ditolak. Periksa AI_API_KEY.",
+    "notFound": "Model tidak ditemukan",
+    "rateLimit": "Terlalu banyak permintaan. Tunggu {seconds} detik...",
+    "serverError": "Kesalahan server. Coba lagi nanti.",
+    "streamInterrupted": "Stream terputus",
+    "retry": "Coba Lagi",
+    "continue": "Lanjutkan"
+  },
+  "agent": {
+    "step": "Langkah {current}/{max}",
+    "toolRunning": "Menjalankan {tool}...",
+    "toolSuccess": "Selesai",
+    "toolError": "Gagal",
+    "toolPendingApproval": "Menunggu Persetujuan",
+    "approve": "Izinkan Sekali",
+    "approveSession": "Izinkan untuk Sesi Ini",
+    "reject": "Tolak",
+    "approvalMessage": "Tool {tool} meminta persetujuan"
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "app": {
+    "title": "KiLi AGENT",
+    "newChat": "New Chat",
+    "search": "Search conversations...",
+    "settings": "Settings",
+    "projects": "Projects",
+    "history": "History"
+  },
+  "chat": {
+    "composer": {
+      "placeholder": "Type your message...",
+      "send": "Send",
+      "stop": "Stop",
+      "agentMode": "Agent Mode",
+      "attachFile": "Attach File"
+    },
+    "message": {
+      "regenerate": "Regenerate",
+      "edit": "Edit",
+      "copy": "Copy",
+      "thumbsUp": "Good",
+      "thumbsDown": "Not Good",
+      "thinking": "Thinking...",
+      "plan": "Plan"
+    },
+    "empty": {
+      "greeting": "Hello! How can I help you today?",
+      "suggestions": [
+        "Explain quantum computing",
+        "Create an interactive webpage",
+        "Help me analyze data",
+        "Write a short story"
+      ]
+    }
+  },
+  "sidebar": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "lastWeek": "Last 7 days",
+    "older": "Older",
+    "rename": "Rename",
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "delete": "Delete",
+    "deleteConfirm": "Are you sure you want to delete this conversation?"
+  },
+  "artifact": {
+    "preview": "Preview",
+    "code": "Code",
+    "copy": "Copy",
+    "download": "Download",
+    "close": "Close",
+    "versions": "Versions"
+  },
+  "settings": {
+    "title": "Settings",
+    "general": "General",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "language": "Language",
+    "languageId": "Indonesia",
+    "languageEn": "English",
+    "customInstructions": "Custom Instructions",
+    "customInstructionsPlaceholder": "Add custom instructions for AI...",
+    "model": "Default Model",
+    "temperature": "Temperature",
+    "maxTokens": "Max Tokens",
+    "exportData": "Export Data",
+    "importData": "Import Data",
+    "clearData": "Clear All Data",
+    "clearDataConfirm": "Are you sure you want to clear all data? This cannot be undone."
+  },
+  "auth": {
+    "login": "Sign In",
+    "password": "Password",
+    "passwordPlaceholder": "Enter password",
+    "loginButton": "Sign In",
+    "loginError": "Incorrect password",
+    "logout": "Sign Out"
+  },
+  "error": {
+    "generic": "An error occurred",
+    "network": "Network error. Check your connection.",
+    "unauthorized": "API key incorrect or denied. Check AI_API_KEY.",
+    "notFound": "Model not found",
+    "rateLimit": "Too many requests. Wait {seconds} seconds...",
+    "serverError": "Server error. Try again later.",
+    "streamInterrupted": "Stream interrupted",
+    "retry": "Retry",
+    "continue": "Continue"
+  },
+  "agent": {
+    "step": "Step {current}/{max}",
+    "toolRunning": "Running {tool}...",
+    "toolSuccess": "Complete",
+    "toolError": "Failed",
+    "toolPendingApproval": "Pending Approval",
+    "approve": "Allow Once",
+    "approveSession": "Allow for Session",
+    "reject": "Reject",
+    "approvalMessage": "Tool {tool} requests approval"
+  }
+}
